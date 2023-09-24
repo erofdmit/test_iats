@@ -1,0 +1,49 @@
+version: '3'
+networks:
+
+    web:
+      external: true
+      name: web
+      driver:  bridge
+
+services:
+  # Сервис PostgreSQL
+  db:
+    image: postgres:latest
+    container_name: postgres_container
+    environment:
+      POSTGRES_DB: addresses
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 7835
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Сервис Python с FastAPI
+  fastapi:
+    build:
+      context: ./
+    container_name: fastapi_container
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    command: uvicorn fapi:app --host 0.0.0.0 --port 8000
+
+  chrome:
+      image: selenium/standalone-chrome:latest
+      hostname: chrome
+      networks:
+        - web
+      privileged: true
+      shm_size: 2g
+  framework:
+      build: .
+      networks:
+          - web
+      depends_on: 
+          - chrome
+
+volumes:
+  postgres_data:
